@@ -63,6 +63,9 @@ ts-fast-check check-all --metrics
 Watch for file changes and check continuously:
 ```bash
 ts-fast-check watch --output json
+
+# Agent-optimized mode with structured event streaming
+ts-fast-check watch --agent-mode --quiet --debounce 200
 ```
 
 ## Options
@@ -73,11 +76,16 @@ ts-fast-check watch --output json
 | `--quiet` | Only output on errors | `false` |
 | `--metrics` | Include performance metrics | `false` |
 | `--no-cache` | Disable caching | `false` |
+| `--agent-mode` | Enable agent-optimized streaming mode for watch | `false` |
+| `--debounce <ms>` | Debounce delay in milliseconds for watch mode | `300` |
 
 ## AI Agent Integration
 
+**🤖 For Claude Code users**: See [CLAUDE_CODE_INTEGRATION.md](./CLAUDE_CODE_INTEGRATION.md) for detailed integration guide.
+
 ### Recommended Workflow for Multi-File Agents
 
+**Option 1: Command-based checking**
 ```bash
 # 1. Agent modifies multiple files
 # 2. Check all changes in one fast operation
@@ -87,7 +95,18 @@ ts-fast-check check-changed --output json --metrics
 # 4. Agent fixes issues and re-checks
 ```
 
+**Option 2: Real-time watch mode (experimental)**
+```bash
+# Start agent-optimized watch mode in the background
+ts-fast-check watch --agent-mode --quiet --debounce 200
+
+# Agent receives structured JSON events in real-time:
+# {"event":"check","timestamp":1234567890,"result":{"errors":[...],"metrics":{...}}}
+```
+
 ### JSON Output Format
+
+**Standard Output (check, check-changed, check-all):**
 ```json
 {
   "errors": [
@@ -104,6 +123,22 @@ ts-fast-check check-changed --output json --metrics
     "checkTime": 45,
     "filesChecked": 3,
     "totalErrors": 1
+  }
+}
+```
+
+**Agent Mode Events (watch --agent-mode):**
+```json
+{
+  "event": "check",
+  "timestamp": 1690789123456,
+  "result": {
+    "errors": [...],
+    "metrics": {
+      "checkTime": 23,
+      "filesChecked": 2,
+      "totalErrors": 1
+    }
   }
 }
 ```

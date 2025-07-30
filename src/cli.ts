@@ -57,6 +57,16 @@ export class CLI {
                 default: false,
                 description: 'Disable caching'
             })
+            .option('agent-mode', {
+                type: 'boolean',
+                default: false,
+                description: 'Enable agent-optimized streaming mode for watch'
+            })
+            .option('debounce', {
+                type: 'number',
+                default: 300,
+                description: 'Debounce delay in milliseconds for watch mode'
+            })
             .help()
             .alias('help', 'h')
             .version()
@@ -88,7 +98,7 @@ export class CLI {
                     break;
 
                 case 'watch':
-                    await this.runWatchMode(outputFormat, quiet, showMetrics);
+                    await this.runWatchMode(outputFormat, quiet, showMetrics, argv['agent-mode'] || false, argv.debounce || 300);
                     return;
 
                 default:
@@ -112,13 +122,25 @@ export class CLI {
         }
     }
 
-    private async runWatchMode(outputFormat: OutputFormat, quiet: boolean, showMetrics: boolean): Promise<void> {
-        console.log('Starting watch mode...');
+    private async runWatchMode(outputFormat: OutputFormat, quiet: boolean, showMetrics: boolean, agentMode: boolean, debounceMs: number): Promise<void> {
+        if (agentMode) {
+            console.log('Starting agent-optimized watch mode...');
+        } else {
+            console.log('Starting watch mode...');
+        }
 
         this.checker.watch(
             (result: CheckResult) => {
                 if (!quiet || result.errors.length > 0) {
-                    if (outputFormat === 'json') {
+                    if (agentMode) {
+                        // Agent-optimized streaming JSON with event metadata
+                        const event = {
+                            event: 'check',
+                            timestamp: Date.now(),
+                            result: result
+                        };
+                        console.log(JSON.stringify(event));
+                    } else if (outputFormat === 'json') {
                         console.log(JSON.stringify(result, null, 2));
                     } else {
                         OutputFormatter.print(result, outputFormat, showMetrics);
@@ -127,14 +149,15 @@ export class CLI {
             },
             (diagnostic: ts.Diagnostic) => {
                 // Status change messages (compilation started, etc.)
-                if (!quiet) {
+                if (!quiet && !agentMode) {
                     console.info(ts.formatDiagnostic(diagnostic, {
                         getCanonicalFileName: path => path,
                         getCurrentDirectory: ts.sys.getCurrentDirectory,
                         getNewLine: () => ts.sys.newLine,
                     }));
                 }
-            }
+            },
+            debounceMs
         );
     }
 

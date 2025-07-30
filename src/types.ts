@@ -27,6 +27,8 @@ export interface CLIOptions {
     quiet: boolean;
     metrics: boolean;
     'no-cache': boolean;
+    'agent-mode'?: boolean;
+    debounce?: number;
 }
 
 export type OutputFormat = 'json' | 'cli' | 'markdown';

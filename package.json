@@ -14,6 +14,7 @@
     "test:integration": "npm run build && node --test test/integration/performance.test.ts",
     "test": "npm run test:unit && npm run test:integration",
     "benchmark": "npm run build && npx tsx test/benchmarks/benchmark.ts",
+    "benchmark:watch": "npm run build && node test/benchmarks/watch-latency.ts",
     "benchmark:report": "npx tsx tools/benchmark-report.ts",
     "clean": "rm -rf dist *.tsbuildinfo",
     "prepare": "npm run build"

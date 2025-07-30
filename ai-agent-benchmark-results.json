@@ -1,0 +1,190 @@
+{
+  "summary": [
+    {
+      "scenario": "single-file-modification",
+      "totalTime": 1148.0103335,
+      "iterations": 2,
+      "averageTime": 441.97972949999985,
+      "speedup": 2.5974275670938893
+    },
+    {
+      "scenario": "multi-file-modification",
+      "totalTime": 1152.0003544999995,
+      "iterations": 2,
+      "averageTime": 441.36793750000015,
+      "speedup": 2.610068055747704
+    },
+    {
+      "scenario": "iterative-cycle",
+      "totalTime": 1138.1645666000002,
+      "iterations": 5,
+      "averageTime": 449.21439139999967,
+      "speedup": 2.5336778794037564
+    },
+    {
+      "scenario": "changed-files-detection",
+      "totalTime": 588.3737089999995,
+      "iterations": 1,
+      "averageTime": 446.70520899999974,
+      "speedup": 1.3171409178709619
+    }
+  ],
+  "detailedResults": [
+    {
+      "scenario": "single-file-modification",
+      "tool": "ts-fast-check",
+      "time": 444.67191699999995,
+      "filesChecked": 1,
+      "errors": 2
+    },
+    {
+      "scenario": "single-file-modification",
+      "tool": "tsc",
+      "time": 1152.712958,
+      "filesChecked": 1,
+      "errors": 2
+    },
+    {
+      "scenario": "single-file-modification",
+      "tool": "ts-fast-check",
+      "time": 439.2875419999998,
+      "filesChecked": 1,
+      "errors": 1
+    },
+    {
+      "scenario": "single-file-modification",
+      "tool": "tsc",
+      "time": 1143.3077089999997,
+      "filesChecked": 1,
+      "errors": 1
+    },
+    {
+      "scenario": "multi-file-modification",
+      "tool": "ts-fast-check",
+      "time": 448.6471670000001,
+      "filesChecked": 2,
+      "errors": 2
+    },
+    {
+      "scenario": "multi-file-modification",
+      "tool": "tsc",
+      "time": 1149.0522499999997,
+      "filesChecked": 2,
+      "errors": 2
+    },
+    {
+      "scenario": "multi-file-modification",
+      "tool": "ts-fast-check",
+      "time": 434.0887080000002,
+      "filesChecked": 3,
+      "errors": 2
+    },
+    {
+      "scenario": "multi-file-modification",
+      "tool": "tsc",
+      "time": 1154.9484589999993,
+      "filesChecked": 3,
+      "errors": 3
+    },
+    {
+      "scenario": "iterative-cycle",
+      "tool": "ts-fast-check",
+      "time": 483.0554579999998,
+      "filesChecked": 1,
+      "errors": 2,
+      "iteration": 1
+    },
+    {
+      "scenario": "iterative-cycle",
+      "tool": "tsc",
+      "time": 1119.4693340000003,
+      "filesChecked": 1,
+      "errors": 2,
+      "iteration": 1
+    },
+    {
+      "scenario": "iterative-cycle",
+      "tool": "ts-fast-check",
+      "time": 447.43791599999986,
+      "filesChecked": 1,
+      "errors": 2,
+      "iteration": 2
+    },
+    {
+      "scenario": "iterative-cycle",
+      "tool": "tsc",
+      "time": 1146.5441660000015,
+      "filesChecked": 1,
+      "errors": 2,
+      "iteration": 2
+    },
+    {
+      "scenario": "iterative-cycle",
+      "tool": "ts-fast-check",
+      "time": 438.79208299999846,
+      "filesChecked": 1,
+      "errors": 2,
+      "iteration": 3
+    },
+    {
+      "scenario": "iterative-cycle",
+      "tool": "tsc",
+      "time": 1150.296875,
+      "filesChecked": 1,
+      "errors": 2,
+      "iteration": 3
+    },
+    {
+      "scenario": "iterative-cycle",
+      "tool": "ts-fast-check",
+      "time": 440.3125,
+      "filesChecked": 1,
+      "errors": 2,
+      "iteration": 4
+    },
+    {
+      "scenario": "iterative-cycle",
+      "tool": "tsc",
+      "time": 1120.645708,
+      "filesChecked": 1,
+      "errors": 2,
+      "iteration": 4
+    },
+    {
+      "scenario": "iterative-cycle",
+      "tool": "ts-fast-check",
+      "time": 436.47400000000016,
+      "filesChecked": 1,
+      "errors": 2,
+      "iteration": 5
+    },
+    {
+      "scenario": "iterative-cycle",
+      "tool": "tsc",
+      "time": 1153.8667499999992,
+      "filesChecked": 1,
+      "errors": 2,
+      "iteration": 5
+    },
+    {
+      "scenario": "changed-files-detection",
+      "tool": "ts-fast-check",
+      "time": 446.70520899999974,
+      "filesChecked": 0,
+      "errors": 0
+    },
+    {
+      "scenario": "changed-files-detection",
+      "tool": "tsc",
+      "time": 588.3737089999995,
+      "filesChecked": 3,
+      "errors": 3
+    }
+  ],
+  "metadata": {
+    "timestamp": "2025-07-30T05:17:24.719Z",
+    "averageSpeedup": 2.2645786050290777,
+    "totalTimeSaved": 2247.2816961999997,
+    "testProject": "fixtures"
+  }
+}

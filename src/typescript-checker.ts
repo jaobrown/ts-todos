@@ -156,18 +156,70 @@ export class TypeScriptFastChecker {
     /**
      * Start watch mode for continuous checking
      */
-    watch(onDiagnostic: (result: CheckResult) => void, onStatusChange?: (diagnostic: ts.Diagnostic) => void): void {
+    watch(onDiagnostic: (result: CheckResult) => void, onStatusChange?: (diagnostic: ts.Diagnostic) => void, debounceMs: number = 300): void {
+        let debounceTimer: NodeJS.Timeout | null = null;
+        let pendingFiles = new Set<string>();
+
+        const debouncedCheck = () => {
+            if (debounceTimer) {
+                clearTimeout(debounceTimer);
+            }
+
+            debounceTimer = setTimeout(() => {
+                const startTime = Date.now();
+                const filesToCheck = Array.from(pendingFiles);
+                pendingFiles.clear();
+
+                if (filesToCheck.length === 0) return;
+
+                let allErrors: TypeScriptError[] = [];
+                let checkedFileCount = 0;
+
+                for (const fileName of filesToCheck) {
+                    try {
+                        // Update file snapshot
+                        this.updateFile(fileName);
+
+                        // Get diagnostics for the file
+                        const syntacticDiagnostics = this.service.getSyntacticDiagnostics(fileName);
+                        const semanticDiagnostics = this.service.getSemanticDiagnostics(fileName);
+                        const diagnostics = [...syntacticDiagnostics, ...semanticDiagnostics];
+
+                        const errors = diagnostics
+                            .filter(d => d.category === ts.DiagnosticCategory.Error || d.category === ts.DiagnosticCategory.Warning)
+                            .map(diagnostic => this.formatDiagnostic(diagnostic))
+                            .filter((error): error is TypeScriptError => error !== null);
+
+                        allErrors = allErrors.concat(errors);
+                        checkedFileCount++;
+                    } catch (error) {
+                        // Skip files that can't be processed
+                        continue;
+                    }
+                }
+
+                const checkTime = Date.now() - startTime;
+
+                onDiagnostic({
+                    errors: allErrors,
+                    metrics: {
+                        checkTime,
+                        filesChecked: checkedFileCount,
+                        totalErrors: allErrors.length
+                    }
+                });
+            }, debounceMs);
+        };
+
         const watchHost = ts.createWatchCompilerHost(
             this.configPath,
             {},
             ts.sys,
             ts.createSemanticDiagnosticsBuilderProgram,
             (diagnostic) => {
-                if (diagnostic.file) {
-                    const error = this.formatDiagnostic(diagnostic);
-                    if (error) {
-                        onDiagnostic({ errors: [error] });
-                    }
+                if (diagnostic.file && diagnostic.file.fileName) {
+                    pendingFiles.add(diagnostic.file.fileName);
+                    debouncedCheck();
                 }
             },
             onStatusChange || (() => { })
