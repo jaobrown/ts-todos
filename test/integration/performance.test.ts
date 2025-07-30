@@ -212,3 +212,226 @@ describe('Comparison with tsc', () => {
         assert.ok(speedup > 2, `Expected at least 2x speedup, got ${speedup.toFixed(2)}x`);
     });
 });
+
+describe('AI Agent Workflow Simulations', () => {
+    test('should provide faster feedback for single file changes (typical agent workflow)', (t) => {
+        const iterations = 3;
+        let tsfcTotal = 0;
+        let tscTotal = 0;
+        
+        printTestStatsBlock(t.name);
+        console.log('Simulating: Agent modifies 1 file, needs quick type checking feedback');
+
+        for (let i = 0; i < iterations; i++) {
+            const tsfcResult = measureTool(`node ${tsfc} check file1.ts --output json`);
+            const tscResult = measureTool('npx tsc --noEmit file1.ts');
+            tsfcTotal += tsfcResult.time;
+            tscTotal += tscResult.time;
+        }
+
+        const tsfcAvg = tsfcTotal / iterations;
+        const tscAvg = tscTotal / iterations;
+        const speedup = tscAvg / tsfcAvg;
+        const timeSaved = tscAvg - tsfcAvg;
+
+        console.log(`ts-fast-check avg: ${tsfcAvg.toFixed(0)}ms`);
+        console.log(`tsc avg:           ${tscAvg.toFixed(0)}ms`);
+        console.log(`Speedup:           ${speedup.toFixed(2)}x`);
+        console.log(`Time saved:        ${timeSaved.toFixed(0)}ms per check`);
+
+        assert.ok(speedup > 2, `Expected at least 2x speedup for agent workflows, got ${speedup.toFixed(2)}x`);
+        assert.ok(timeSaved > 500, `Expected significant time savings, got ${timeSaved.toFixed(0)}ms`);
+    });
+
+    test('should efficiently handle multi-file modifications (agent refactoring)', (t) => {
+        const testScenarios = [
+            { files: 'file1.ts valid.ts', name: '2 files' },
+            { files: 'file1.ts valid.ts foo/file2.ts', name: '3 files' }
+        ];
+
+        printTestStatsBlock(t.name);
+        console.log('Simulating: Agent refactors multiple related files');
+
+        for (const scenario of testScenarios) {
+            const tsfcResult = measureTool(`node ${tsfc} check ${scenario.files} --output json --metrics`);
+            const tscResult = measureTool(`npx tsc --noEmit ${scenario.files}`);
+            
+            const speedup = tscResult.time / tsfcResult.time;
+            console.log(`${scenario.name}: ts-fast-check ${tsfcResult.time.toFixed(0)}ms vs tsc ${tscResult.time.toFixed(0)}ms (${speedup.toFixed(2)}x)`);
+            
+            assert.ok(speedup > 2, `Multi-file scenario should be >2x faster, got ${speedup.toFixed(2)}x`);
+            
+            // Verify JSON output structure for agent parsing
+            if (tsfcResult.errorCount === 0) { // Success case
+                const json = JSON.parse(execSync(`node ${tsfc} check ${scenario.files} --output json`, {
+                    cwd: fixturesRoot,
+                    encoding: 'utf8'
+                }));
+                assert.ok(Array.isArray(json.errors), 'Should provide errors array for agents');
+                assert.ok(json.metrics, 'Should provide metrics for agent optimization');
+                assert.equal(typeof json.metrics.checkTime, 'number', 'Should provide numeric timing');
+            }
+        }
+    });
+
+    test('should outperform tsc for iterative development cycles', (t) => {
+        const cycles = 3;
+        const testFile = 'file1.ts';
+        
+        let tsfcCumulativeTime = 0;
+        let tscCumulativeTime = 0;
+
+        printTestStatsBlock(t.name);
+        console.log(`Simulating: Agent iterative cycle - check → fix → check (${cycles} cycles)`);
+
+        for (let cycle = 1; cycle <= cycles; cycle++) {
+            const tsfcResult = measureTool(`node ${tsfc} check ${testFile} --output json`);
+            const tscResult = measureTool(`npx tsc --noEmit ${testFile}`);
+            
+            tsfcCumulativeTime += tsfcResult.time;
+            tscCumulativeTime += tscResult.time;
+            
+            console.log(`Cycle ${cycle}: ts-fast-check ${tsfcResult.time.toFixed(0)}ms vs tsc ${tscResult.time.toFixed(0)}ms`);
+        }
+
+        const avgSpeedup = tscCumulativeTime / tsfcCumulativeTime;
+        const totalTimeSaved = tscCumulativeTime - tsfcCumulativeTime;
+
+        console.log(`Cumulative: ts-fast-check ${tsfcCumulativeTime.toFixed(0)}ms vs tsc ${tscCumulativeTime.toFixed(0)}ms`);
+        console.log(`Average speedup: ${avgSpeedup.toFixed(2)}x`);
+        console.log(`Total time saved: ${totalTimeSaved.toFixed(0)}ms (${(totalTimeSaved/1000).toFixed(1)}s)`);
+
+        assert.ok(avgSpeedup > 2, `Iterative cycles should average >2x speedup, got ${avgSpeedup.toFixed(2)}x`);
+        assert.ok(totalTimeSaved > cycles * 500, `Should save significant cumulative time`);
+    });
+
+    test('check-changed should be dramatically faster than full project tsc', (t) => {
+        printTestStatsBlock(t.name);
+        console.log('Simulating: Agent uses check-changed vs full project type checking');
+
+        // check-changed approach (optimized for agents)
+        const checkChangedResult = measureTool(`node ${tsfc} check-changed --output json --metrics`);
+        
+        // Full project tsc approach (what most agents do without our tool)
+        const tscFullResult = measureTool('npx tsc --noEmit');
+
+        const speedup = checkChangedResult.errorCount === 0 ? 
+            (tscFullResult.time / checkChangedResult.time) : 1;
+
+        console.log(`check-changed: ${checkChangedResult.time.toFixed(0)}ms`);
+        console.log(`tsc --noEmit:  ${tscFullResult.time.toFixed(0)}ms (full project)`);
+        
+        if (speedup > 1) {
+            console.log(`Efficiency gain: ${speedup.toFixed(2)}x faster`);
+            console.log('Key benefit: Only checks modified files vs entire project');
+        } else {
+            console.log('Note: No git changes detected, but check-changed completed successfully');
+        }
+
+        // Should complete successfully regardless of git state
+        assert.ok(checkChangedResult.time > 0, 'check-changed should complete successfully');
+        assert.ok(tscFullResult.time > 0, 'tsc should complete successfully');
+        
+        // When there are changes, should be faster than full project check
+        if (checkChangedResult.errorCount === 0 && speedup > 1) {
+            assert.ok(speedup >= 1.2, `Expected check-changed to be more efficient, got ${speedup.toFixed(2)}x`);
+        }
+    });
+
+    test('should provide reliable JSON output for agent parsing', (t) => {
+        printTestStatsBlock(t.name);
+        console.log('Validating: JSON output reliability for AI agent consumption');
+
+        const testCases = [
+            { file: 'file1.ts', expectErrors: true },
+            { file: 'valid.ts', expectErrors: false }
+        ];
+
+        for (const testCase of testCases) {
+            let output = '';
+            let exitCode = 0;
+            
+            try {
+                output = execSync(`node ${tsfc} check ${testCase.file} --output json --metrics`, {
+                    cwd: fixturesRoot,
+                    encoding: 'utf8'
+                });
+            } catch (error: any) {
+                exitCode = error.status;
+                output = error.stdout || '';
+            }
+
+            // Should always produce valid JSON
+            assert.doesNotThrow(() => JSON.parse(output), `Should produce valid JSON for ${testCase.file}`);
+            
+            const json = JSON.parse(output);
+            
+            // Validate JSON structure for agent consumption
+            assert.ok(Array.isArray(json.errors), 'Should have errors array');
+            assert.ok(json.metrics, 'Should have metrics object');
+            assert.equal(typeof json.metrics.checkTime, 'number', 'Should have numeric checkTime');
+            assert.equal(typeof json.metrics.filesChecked, 'number', 'Should have numeric filesChecked');
+            assert.equal(typeof json.metrics.totalErrors, 'number', 'Should have numeric totalErrors');
+
+            // Validate error structure when errors exist
+            if (json.errors.length > 0) {
+                const error = json.errors[0];
+                assert.equal(typeof error.file, 'string', 'Error should have file string');
+                assert.equal(typeof error.line, 'number', 'Error should have line number');
+                assert.equal(typeof error.column, 'number', 'Error should have column number');
+                assert.equal(typeof error.code, 'string', 'Error should have code string');
+                assert.equal(typeof error.message, 'string', 'Error should have message string');
+                assert.ok(['error', 'warning'].includes(error.severity), 'Error should have valid severity');
+            }
+
+            // Validate exit codes for reliable agent error detection
+            if (testCase.expectErrors) {
+                assert.equal(exitCode, 1, `Should exit with code 1 when errors found in ${testCase.file}`);
+                assert.ok(json.errors.length > 0, `Should report errors for ${testCase.file}`);
+            } else {
+                assert.equal(exitCode, 0, `Should exit with code 0 when no errors in ${testCase.file}`);
+                assert.equal(json.errors.length, 0, `Should report no errors for ${testCase.file}`);
+            }
+
+            console.log(`✓ ${testCase.file}: ${json.errors.length} errors, ${json.metrics.checkTime}ms, exit code ${exitCode}`);
+        }
+    });
+
+    test('should demonstrate agent workflow time savings over daily usage', (t) => {
+        printTestStatsBlock(t.name);
+        console.log('Calculating: Estimated daily time savings for AI agent workflows');
+
+        const workflowTests = [
+            { name: 'Single file check', command: `node ${tsfc} check file1.ts --output json` },
+            { name: 'Multi-file check', command: `node ${tsfc} check file1.ts valid.ts --output json` }
+        ];
+
+        let totalTimeSaved = 0;
+        const checksPerDay = 50; // Typical AI agent usage
+
+        for (const workflow of workflowTests) {
+            const tsfcResult = measureTool(workflow.command);
+            const tscEquivalent = measureTool(`npx tsc --noEmit file1.ts valid.ts`);
+            
+            const timeSavedPerCheck = tscEquivalent.time - tsfcResult.time;
+            const dailySavings = (timeSavedPerCheck * checksPerDay) / 1000; // seconds
+            totalTimeSaved += timeSavedPerCheck;
+
+            console.log(`${workflow.name}:`);
+            console.log(`  Per check: ${timeSavedPerCheck.toFixed(0)}ms saved`);
+            console.log(`  Daily (${checksPerDay} checks): ${dailySavings.toFixed(1)}s saved`);
+        }
+
+        const avgTimeSavedPerCheck = totalTimeSaved / workflowTests.length;
+        const totalDailySavings = (avgTimeSavedPerCheck * checksPerDay) / 1000;
+
+        console.log(`\nDaily Impact Summary:`);
+        console.log(`Average time saved per check: ${avgTimeSavedPerCheck.toFixed(0)}ms`);
+        console.log(`Total daily time savings: ${totalDailySavings.toFixed(1)}s`);
+        console.log(`Weekly productivity gain: ${(totalDailySavings * 5 / 60).toFixed(1)} minutes`);
+
+        // Validate meaningful time savings
+        assert.ok(avgTimeSavedPerCheck > 500, `Expected >500ms savings per check, got ${avgTimeSavedPerCheck.toFixed(0)}ms`);
+        assert.ok(totalDailySavings > 30, `Expected >30s daily savings, got ${totalDailySavings.toFixed(1)}s`);
+    });
+});

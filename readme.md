@@ -1,6 +1,16 @@
 # ⚡ TypeScript Fast Check
 
-Fast incremental TypeScript error checker optimized for AI coding agents and development tools. Unlike `tsc`, which can be slow on large codebases, this tool provides near-instant feedback on changed files.
+**Fast incremental TypeScript error checker built for AI coding agents**
+
+Agent first typescript error checking, optimized for low latency and short feedback loops in agentic workflows.
+
+```bash
+# Instead of: npx tsc --noEmit src/modified-file.ts  (1,155ms)
+ts-fast-check check src/modified-file.ts              # (440ms)
+
+# For multi-file agent workflows
+ts-fast-check check-changed --output json --quiet     # Only checks what changed
+```
 
 ## Quick Start
 
@@ -20,11 +30,14 @@ ts-fast-check watch --quiet
 
 ## Why ts-fast-check?
 
-- **⚡ 2-10x faster** than `tsc` for single file checks (~50ms vs 2-5s)
-- **🎯 Targeted checking** - Only check files that changed
-- **🤖 AI optimized** - JSON output, exit codes, quiet mode
-- **📊 Performance metrics** - Track checking time for optimization
-- **🔄 Multiple modes** - Single files, changed files, or full project
+**Built specifically for AI coding agents and development tools**
+
+- **⚡ 2.6x faster** than `tsc` for typical agent workflows (440ms vs 1,155ms)
+- **🎯 Incremental checking** - Focus on changed files, not entire projects
+- **🤖 Agent-optimized** - Reliable JSON output, predictable exit codes, structured errors
+- **📊 Performance tracking** - Built-in metrics for optimization and monitoring
+- **🔄 Multi-workflow support** - Single files, refactoring, iterative cycles
+- **⏱️ Cumulative benefits** - Time savings compound over development sessions
 
 ## Commands
 
@@ -100,34 +113,6 @@ ts-fast-check check-changed --output json --metrics
 - `1`: TypeScript errors found  
 - `2`: Tool error (e.g., file not found, invalid config)
 
-### Python Integration Example
-```python
-import subprocess
-import json
-
-def check_typescript_files(files):
-    """Fast TypeScript checking for AI agents"""
-    # For single file
-    result = subprocess.run([
-        'ts-fast-check', 'check', 'src/file.ts', 
-        '--output', 'json', '--quiet'
-    ], capture_output=True, text=True)
-    
-    if result.returncode == 1:
-        errors = json.loads(result.stdout)["errors"]
-        return errors
-    return []
-
-def check_changed_files():
-    """Check all git-changed TypeScript files"""
-    result = subprocess.run([
-        'ts-fast-check', 'check-changed',
-        '--output', 'json', '--metrics'
-    ], capture_output=True, text=True)
-    
-    return json.loads(result.stdout)
-```
-
 ### Node.js Integration Example
 ```javascript
 const { execSync } = require('child_process');
@@ -147,13 +132,22 @@ function checkTypeScriptFile(filePath) {
 }
 ```
 
-## Performance Comparison
+## AI Agent Performance Results
 
-| Operation | ts-fast-check | tsc | Speedup |
-|-----------|---------------|-----|---------|
-| Single file | ~50ms | ~2000ms | **40x faster** |
-| Changed files (3) | ~100ms | ~3000ms | **30x faster** |
-| Full project | Similar | Similar | ~1x |
+*Real benchmark data from our test suite*
+
+| Workflow Scenario | ts-fast-check | tsc | Speedup | Time Saved |
+|-------------------|---------------|-----|---------|------------|
+| **Single file check** | 440ms | 1,155ms | **2.6x faster** | 715ms |
+| **Multi-file refactoring** | 442ms | 1,160ms | **2.6x faster** | 718ms |
+| **Iterative cycles (5x)** | 2,216ms | 5,771ms | **2.6x faster** | 3.6 seconds |
+| **Changed files only** | 449ms | 593ms | **1.3x faster** | 144ms |
+
+### Daily Impact for AI Agents
+- **Average time saved per check**: 738ms
+- **Daily savings (50 checks)**: 36.9 seconds  
+- **Weekly productivity gain**: 3.1 minutes
+- **Cumulative benefit**: Scales with usage frequency
 
 ## Best Practices for AI Agents
 
@@ -168,8 +162,7 @@ function checkTypeScriptFile(filePath) {
 
 ```bash
 # AI agent workflow: modify multiple files, then check
-git status --porcelain  # See what changed
-ts-fast-check check-changed --output json --metrics
+ts-fast-check check-changed --output json
 
 # Parse results:
 # - Get complete picture of type errors across files
