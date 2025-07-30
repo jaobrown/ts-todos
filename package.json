@@ -1,18 +1,42 @@
 {
-  "name": "ts-todo-list",
-  "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "ts-todos": "npx tsx index.ts"
+  "name": "ts-fast-check",
+  "version": "0.1.0",
+  "description": "Fast incremental TypeScript error checker optimized for AI coding agents",
+  "main": "dist/index.js",
+  "type": "module",
+  "bin": {
+    "ts-fast-check": "./dist/index.js"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "dev": "npx tsx index.ts",
+    "test:unit": "npm run build && node --test test/unit/*.test.ts",
+    "test:integration": "npm run build && node --test test/integration/performance.test.ts",
+    "test": "npm run test:unit && npm run test:integration",
+    "benchmark": "npm run build && npx tsx test/benchmarks/benchmark.ts",
+    "benchmark:report": "npx tsx tools/benchmark-report.ts",
+    "clean": "rm -rf dist *.tsbuildinfo",
+    "prepare": "npm run build"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jaobrown/ts-fast-check.git"
+  },
+  "keywords": [
+    "typescript",
+    "type-checking",
+    "incremental",
+    "ai-agents",
+    "fast",
+    "cli"
+  ],
+  "author": "Jared Brown <jared@jared.to>",
+  "files": [
+    "bin",
+    "dist"
+  ],
   "dependencies": {
     "@types/node": "^20.11.30",
-    "boxen": "^7.1.1",
     "chalk": "^5.3.0",
     "typescript": "^5.4.3",
     "yargs": "^17.7.2"

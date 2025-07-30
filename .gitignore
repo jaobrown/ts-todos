@@ -5,3 +5,13 @@ node_modules/
 dist/
 *.lock
 package-lock.json
+
+# Generated files
+benchmark-results.json
+BENCHMARK_REPORT.md
+test-project-*
+*.tsbuildinfo
+
+# OS files
+.DS_Store
+Thumbs.db
